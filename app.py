@@ -4,7 +4,7 @@ from PIL import Image
 from io import BytesIO
 
 # API kalitini kiriting
-API_KEY = "sizning_api_kalitingiz"
+API_KEY = "P8fnu6cFfxLjZ5/j3zgjWQ==Crfg7BuJUiuKd8rL"
 
 # API-ga so'rov jo'natish funksiyasi
 def detect_objects(image_bytes):
