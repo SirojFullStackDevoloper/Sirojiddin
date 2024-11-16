@@ -1,42 +1,27 @@
 import streamlit as st
-import requests
-from PIL import Image
-from io import BytesIO
+from fastai.vision.all import *
+import plotly.express as px
+import pathlib
+pathlib.PosixPath = pathlib.Path
 
-# API kalitini kiriting
-API_KEY = "P8fnu6cFfxLjZ5/j3zgjWQ==Crfg7BuJUiuKd8rL"
+# title
+st.title('Transportni klassifikatsiya qiluvchi model')
 
-# API-ga so'rov jo'natish funksiyasi
-def detect_objects(image_bytes):
-    url = "https://api.api-ninjas.com/v1/objectdetection"
-    headers = {'X-Api-Key': API_KEY}
-    files = {'image': image_bytes}
-    response = requests.post(url, headers=headers, files=files)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error("API so'rovi bajarilmadi.")
-        return None
-
-# Streamlit interfeys
-st.title("Object Detection API Demo")
-st.write("Tasvirni yuklang va ob'ektlar avtomatik aniqlanadi.")
-
-# Tasvir yuklash imkoniyati
-uploaded_file = st.file_uploader("Tasvir yuklang", type=["jpg", "jpeg", "png"])
-
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Yuklangan Tasvir', use_column_width=True)
+# Rasmni joylash
+files = st.file_uploader("Rasm yuklash", type=["avif", "png", "jpeg", "gif", "svg"])
+if files:
+    st.image(files)  # rasmni chiqarish
+    # PIL convert
+    img = PILImage.create(files)
     
-    # Tasvirni APIga yuborish
-    with st.spinner("Ob'ektlar aniqlanmoqda..."):
-        result = detect_objects(uploaded_file)
+    # Modelni yuklash
+    model = load_learner('transport_model.pkl')
 
-    # Natijalarni ko'rsatish
-    if result:
-        st.write("Aniqlangan ob'ektlar:")
-        for obj in result:
-            st.write(f"Ob'ekt turi: {obj['object']}, Koordinatalari: {obj['box']}")
-    else:
-        st.write("Hech qanday ob'ekt topilmadi.")
+    # Bashorat qiymatni topamiz
+    pred, pred_id, probs = model.predict(img)
+    st.success(f"Bashorat: {pred}")
+    st.info(f"Ehtimollik: {probs[pred_id] * 100:.1f}%")
+
+    # Plotting
+    fig = px.bar(x=probs * 100, y=model.dls.vocab)
+    st.plotly_chart(fig)
